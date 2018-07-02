@@ -51,4 +51,23 @@ class HuffmanSuite extends FunSuite {
     }
   }
 
+  test("return the frequency of characters") {
+    assert(
+      times(List('h', 'e', 'l', 'l', 'o', ',', ' ', 'w', 'o', 'r', 'l', 'd')) === (
+        List(
+          ('h', 1),
+          ('e', 1),
+          ('l', 3),
+          ('o', 2),
+          (',', 1),
+          (' ', 1),
+          ('w', 1),
+          ('r', 1),
+          ('d', 1)
+        )
+      )
+
+    )
+  }
+
 }
