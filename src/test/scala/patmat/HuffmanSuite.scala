@@ -36,16 +36,31 @@ class HuffmanSuite extends FunSuite {
 
   test("makeOrderedLeafList for some frequency table") {
     assert(makeOrderedLeafList(List(('t', 2), ('e', 1), ('x', 3))) === List(Leaf('e',1), Leaf('t',2), Leaf('x',3)))
+    assert(makeOrderedLeafList(List(('e', 1), ('x', 4), ('t', 2))) === List(Leaf('e',1), Leaf('t',2), Leaf('x',4)))
   }
-
 
   test("combine of some leaf list") {
     val leaflist = List(Leaf('e', 1), Leaf('t', 2), Leaf('x', 4))
     assert(combine(leaflist) === List(Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('x',4)))
   }
 
+  test("combine of some tree list into a tree") {
+    val leaflist = List(Leaf('e', 1), Leaf('t', 2), Leaf('x', 4))
+    assert(until(singleton, combine)(leaflist) === Fork(Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('x',4),List('e', 't', 'x'),7))
+  }
+
+  test("make a tree out of a list of characters") {
+    val charlist = List('e', 'x', 't', 'x', 'x', 't', 'x')
+    assert(createCodeTree(charlist) === Fork(Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('x',4),List('e', 't', 'x'),7))
+  }
 
   test("decode and encode a very short text should be identity") {
+    val decoded = decode(
+      Fork(Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('x',4),List('e', 't', 'x'),7),
+      List(0,1,0,0)
+    )
+    assert(decoded === "te".toList)
+
     new TestTrees {
       assert(decode(t1, encode(t1)("ab".toList)) === "ab".toList)
     }

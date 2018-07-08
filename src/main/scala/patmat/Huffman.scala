@@ -98,8 +98,8 @@ object Huffman {
    */
     def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = freqs match {
       case (char1, freq1) :: (char2, freq2) :: tail => {
-        if (freq1 < freq2) Leaf(char1, freq1) :: Leaf(char2, freq2) :: makeOrderedLeafList(tail)
-        else Leaf(char2, freq2) :: Leaf(char1, freq1) :: makeOrderedLeafList(tail)
+        if (freq1 < freq2) Leaf(char1, freq1) ::  makeOrderedLeafList((char2, freq2) :: tail)
+        else Leaf(char2, freq2) :: makeOrderedLeafList((char1, freq1) :: tail)
       }
       case (char, freq) :: Nil => Leaf(char, freq) :: Nil
       case Nil => Nil
@@ -125,7 +125,20 @@ object Huffman {
    * If `trees` is a list of less than two elements, that list should be returned
    * unchanged.
    */
-    def combine(trees: List[CodeTree]): List[CodeTree] = ???
+    def combine(trees: List[CodeTree]): List[CodeTree] = {
+      def merge(x: CodeTree, y: CodeTree): Fork = (x, y) match {
+        case (a: Leaf, b: Leaf) => if (a.weight < b.weight) makeCodeTree(a, b) else makeCodeTree(b, a)
+        case (a: Leaf, b: Fork) => if (a.weight < b.weight) makeCodeTree(a, b) else makeCodeTree(b, a)
+        case (a: Fork, b: Leaf) => if (a.weight < b.weight) makeCodeTree(a, b) else makeCodeTree(b, a)
+        case (a: Fork, b: Fork) => if (a.weight < b.weight) makeCodeTree(a, b) else makeCodeTree(b, a)
+      }
+
+      trees match {
+        case Nil => trees
+        case x :: Nil => trees
+        case x :: (y :: rest) => merge(x, y) :: combine(rest)
+      }
+    }
   
   /**
    * This function will be called in the following way:
@@ -144,7 +157,8 @@ object Huffman {
    *    the example invocation. Also define the return type of the `until` function.
    *  - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
    */
-    def until(xxx: ???, yyy: ???)(zzz: ???): ??? = ???
+    def until(isOneTree: (List[CodeTree]) => Boolean, merge: (List[CodeTree]) => List[CodeTree])(trees: List[CodeTree]): CodeTree =
+      if (isOneTree(trees)) trees.head else  until(isOneTree, merge)(merge(trees))
   
   /**
    * This function creates a code tree which is optimal to encode the text `chars`.
@@ -152,8 +166,8 @@ object Huffman {
    * The parameter `chars` is an arbitrary text. This function extracts the character
    * frequencies from that text and creates a code tree based on them.
    */
-    def createCodeTree(chars: List[Char]): CodeTree = ???
-  
+    def createCodeTree(chars: List[Char]): CodeTree =
+      until(singleton, combine)(makeOrderedLeafList(times(chars)))
 
   // Part 3: Decoding
 
@@ -163,8 +177,22 @@ object Huffman {
    * This function decodes the bit sequence `bits` using the code tree `tree` and returns
    * the resulting list of characters.
    */
-    def decode(tree: CodeTree, bits: List[Bit]): List[Char] = ???
-  
+    def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
+      def doDecode(codeTree: CodeTree, bitsLeft: List[Bit]): List[Char] = bitsLeft match {
+        case x :: rest => codeTree match {
+          case f: Fork => if (x == 0) doDecode(f.left, rest) else doDecode(f.right, rest)
+          case l: Leaf => l.char :: doDecode(tree, bitsLeft)
+
+        }
+        case Nil => codeTree match {
+          case f: Fork => Nil
+          case l: Leaf => l.char :: Nil
+        }
+      }
+      doDecode(tree, bits)
+    }
+
+
   /**
    * A Huffman coding tree for the French language.
    * Generated from the data given at
@@ -181,7 +209,7 @@ object Huffman {
   /**
    * Write a function that returns the decoded secret
    */
-    def decodedSecret: List[Char] = ???
+    def decodedSecret: List[Char] = decode(frenchCode, secret)
   
 
   // Part 4a: Encoding using Huffman tree
@@ -190,7 +218,19 @@ object Huffman {
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
-    def encode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+    def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+      def contains(char: Char, codeTree: CodeTree): Boolean = codeTree match {
+        case f: Fork => contains(char, f.left) || contains(char, f.right)
+        case l: Leaf => l.char == char
+      }
+      text match {
+        case x :: rest => tree match {
+          case f: Fork => if(contains(x, f.left)) 0 :: encode(tree)(rest) else 1 :: encode(tree)(rest)
+          case l: Leaf => Nil
+        }
+        case Nil => Nil
+      }
+    }
   
   // Part 4b: Encoding using code table
 
