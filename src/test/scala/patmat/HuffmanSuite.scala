@@ -66,6 +66,23 @@ class HuffmanSuite extends FunSuite {
     }
   }
 
+  test("turn fork into a table") {
+    val tree = Fork(Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('x',4),List('e', 't', 'x'),7)
+    val table = List(
+      ('e', List(0, 0)),
+      ('t', List(0, 1)),
+      ('x', List(1))
+    )
+    assert(convert(tree) === table)
+  }
+
+
+  test("quick encode") {
+    val tree = Fork(Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('x',4),List('e', 't', 'x'),7)
+
+    assert(quickEncode(tree)("etx".toList) === List(0, 0, 0, 1, 1))
+  }
+
   test("return the frequency of characters") {
     assert(
       times(List('h', 'e', 'l', 'l', 'o', ',', ' ', 'w', 'o', 'r', 'l', 'd')) === (
